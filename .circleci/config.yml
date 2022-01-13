@@ -86,6 +86,24 @@ jobs:
             docker push $DOCKER_HUB_USER_ID/$DOCKER_HUB_NAME:$CIRCLE_BUILD_NUM
             docker push $DOCKER_HUB_USER_ID/$DOCKER_HUB_NAME:latest
 
+
+
+  back-deploy-heroku:
+    docker:
+      - image: buildpack-deps:trusty
+    steps:
+      - checkout
+      - run:
+          name: Heroku Deploy
+          command: git push https://heroku:$HEROKU_KEY@git.heroku.com/HEROKU_NAME.git HEAD:main
+      - run:
+          name: Smoke Test
+          command: |
+            HTTPCODE=`curl -s -o /dev/null -w "%{http_code}" https://HEROKU_NAME.herokuapp.com/`
+            if [ "$HTTPCODE" -ne 200 ];then
+                echo "heroku app not responding, failing deploy"
+                exit 1
+            fi
 workflows:
   build-test-and-lint:
     jobs:
