@@ -95,11 +95,11 @@ jobs:
       - checkout
       - run:
           name: Heroku Deploy
-          command: git push https://heroku:$HEROKU_KEY@git.heroku.com/HEROKU_NAME.git HEAD:main
+          command: git push https://heroku:$HEROKU_KEY@git.heroku.com/$HEROKU_NAME.git HEAD:main
       - run:
           name: Smoke Test
           command: |
-            HTTPCODE=`curl -s -o /dev/null -w "%{http_code}" https://HEROKU_NAME.herokuapp.com/`
+            HTTPCODE=`curl -s -o /dev/null -w "%{http_code}" https://$HEROKU_NAME.herokuapp.com/`
             if [ "$HTTPCODE" -ne 200 ];then
                 echo "heroku app not responding, failing deploy"
                 exit 1
