@@ -29,14 +29,75 @@ jobs:
       - run:
           name: Run tests
           command: yarn test
+  build: &shared-config
+    docker:
+      - image: circleci/node:lts-fermium
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dependencies-{{ checksum "package.json" }}-v1
+            - dependencies-
+      - run: yarn install
+      - save_cache:
+          paths:
+            - node_modules
+          key: dependencies-{{ checksum "package.json" }}-v1
+  lint:
+    <<: *shared-config
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependencies-{{ checksum "package.json" }}-v1
+      - run: yarn lint
+      - run: yarn format:check
+
+
+  back-test-unit:
+    <<: *shared-config
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependencies-{{ checksum "package.json" }}-v1
+      - run:
+          command: yarn test
+          environment:
+            DATABASE_URL: postgres://psqluer:psqlpassword@localhost:5432/psqluer
+
+
+
+  back-test-e2e:
+    docker:
+      - image: circleci/node:lts-fermium
+      - image: circleci/postgres:9.6.5
+        environment:
+          POSTGRES_DB: psqluer
+          POSTGRES_USER: psqluer
+          POSTGRES_PASSWORD: psqlpassword
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependencies-{{ checksum "package.json" }}-v1
+      - run:
+          command: yarn test:e2e
+          environment:
+            DATABASE_URL: postgres://psqluer:psqlpassword@localhost:5432/psqluer
 
 workflows:
-  # Below is the definition of your workflow.
-  # Inside the workflow, you provide the jobs you want to run, e.g this workflow runs the build-and-test job above.
-  # CircleCI will run this workflow on every commit.
-  # For more details on extending your workflow, see the configuration docs: https://circleci.com/docs/2.0/configuration-reference/#workflows
+  build-test-and-lint:
+    jobs:
+      - build
+      - back-test-unit:
+          requires:
+            - build
+      - back-test-e2e:
+          requires:
+            - build
+      - lint:
+          requires:
+            - build
   sample:
     jobs:
       - build-and-test
-      # For running simple node tests, you could optionally use the node/test job from the orb to replicate and replace the job above in fewer lines.
-      # - node/test
