@@ -65,6 +65,27 @@ jobs:
           environment:
             DATABASE_URL: postgres://psqluer:psqlpassword@localhost:5432/psqluer
 
+
+  docker-build-and-push:
+    working_directory: /dockerapp
+    docker:
+      - image: docker:17.05.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 19.03.13
+      - run:
+          name: Build application Docker image
+          command: docker build -t app .
+      - deploy:
+          name: Publish application to docker hub
+          command: |
+            docker login -e $DOCKER_HUB_EMAIL -u $DOCKER_HUB_USER_ID -p $DOCKER_HUB_PWD
+            docker tag app $DOCKER_HUB_USER_ID/$DOCKER_HUB_NAME:$CIRCLE_BUILD_NUM
+            docker tag app $DOCKER_HUB_USER_ID/$DOCKER_HUB_NAME:latest
+            docker push $DOCKER_HUB_USER_ID/$DOCKER_HUB_NAME:$CIRCLE_BUILD_NUM
+            docker push $DOCKER_HUB_USER_ID/$DOCKER_HUB_NAME:latest
+
 workflows:
   build-test-and-lint:
     jobs:
