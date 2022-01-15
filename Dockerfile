@@ -1,5 +1,5 @@
 FROM node:lts-fermium
-LABEL maintainer="TP FINAL"
+
 
 WORKDIR /repo
 
